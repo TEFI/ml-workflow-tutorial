@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titanic-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: titanic-api
+  template:
+    metadata:
+      labels:
+        app: titanic-api
+    spec:
+      containers:
+      - name: titanic-api
+        image: gcr.io/YOUR_PROJECT_ID/titanic-api:latest
+        ports:
+        - containerPort: 80
