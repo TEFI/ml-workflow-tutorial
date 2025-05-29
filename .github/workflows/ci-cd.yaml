@@ -21,7 +21,8 @@ jobs:
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: GCP_TITANIC_PROJECT_ID
+        project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
+
 
     - name: Configure Docker to use GCR
       run: gcloud auth configure-docker
