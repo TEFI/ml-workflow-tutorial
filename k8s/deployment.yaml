@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
       - name: titanic-api
-        image: gcr.io/GCP_TITANIC_PROJECT_ID/titanic-api:latest
+        #image: gcr.io/GCP_TITANIC_PROJECT_ID/titanic-api:latest
+        image: gcr.io/sodium-pager-461309-p3/titanic-api:latest
         ports:
         - containerPort: 80
         env:

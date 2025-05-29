@@ -47,9 +47,9 @@ jobs:
       run: |
         gcloud container clusters get-credentials ${{ secrets.TITANIC_CLUSTER }} --zone us-central1-a
 
-    - name: Replace project ID in deployment.yaml
-      run: |
-        sed "s|GCP_PROJECT_ID|${{ secrets.GCP_TITANIC_PROJECT_ID }}|g" k8s/deployment.template.yaml > k8s/deployment.yaml
+    #- name: Replace project ID in deployment.yaml
+    #  run: |
+    #    sed "s|GCP_PROJECT_ID|${{ secrets.GCP_TITANIC_PROJECT_ID }}|g" k8s/deployment.template.yaml > k8s/deployment.yaml
 
     - name: Deploy to GKE
       run: |
