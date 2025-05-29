@@ -23,7 +23,6 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
 
-
     - name: Configure Docker to use GCR
       run: gcloud auth configure-docker
 
@@ -39,7 +38,12 @@ jobs:
       run: |
         gcloud container clusters get-credentials ${{ secrets.TITANIC_CLUSTER }} --zone us-central1-a
 
+    - name: Replace project ID in deployment.yaml
+      run: |
+        sed "s|GCP_PROJECT_ID|${{ secrets.GCP_TITANIC_PROJECT_ID }}|g" k8s/deployment.template.yaml > k8s/deployment.yaml
+
     - name: Deploy to GKE
       run: |
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
+
