@@ -23,16 +23,16 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
 
-    - name: Configure Docker to use GCR
-      run: gcloud auth configure-docker
+    - name: Configure Docker to use Artifact Registry
+      run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-api:latest ./api
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-repo/titanic-api:latest ./api
 
-    - name: Push Docker image to GCR
+    - name: Push Docker image to Artifact Registry
       run: |
-        docker push gcr.io/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-api:latest
+        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-repo/titanic-api:latest
 
     - name: Get GKE credentials
       run: |
@@ -46,4 +46,3 @@ jobs:
       run: |
         kubectl apply -f k8s/deployment.yaml
         kubectl apply -f k8s/service.yaml
-
