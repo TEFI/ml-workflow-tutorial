@@ -23,6 +23,15 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
 
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
+
+    - name: Install gke-gcloud-auth-plugin
+      run: |
+        gcloud components install gke-gcloud-auth-plugin
+
     - name: Configure Docker to use Artifact Registry
       run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
