@@ -29,11 +29,11 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/GCP_TITANIC_PROJECT_ID/titanic-api:latest ./api
+        docker build -t gcr.io/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-api:latest ./api
 
     - name: Push Docker image to GCR
       run: |
-        docker push gcr.io/GCP_TITANIC_PROJECT_ID/titanic-api:latest
+        docker push gcr.io/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-api:latest
 
     - name: Get GKE credentials
       run: |
