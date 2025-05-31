@@ -8,9 +8,9 @@ on:
 jobs:
   deploy-serving:
     if: >
-      contains(join(github.event.head_commit.modified), 'serving/') ||
-      contains(join(github.event.head_commit.added), 'serving/') ||
-      contains(join(github.event.head_commit.removed), 'serving/')
+      contains(join(github.event.commits.*.modified), 'serving/') ||
+      contains(join(github.event.commits.*.added), 'serving/') ||
+      contains(join(github.event.commits.*.removed), 'serving/')
     runs-on: ubuntu-latest
 
     steps:
@@ -66,9 +66,9 @@ jobs:
 
   deploy-training-service:
     if: >
-      contains(join(github.event.head_commit.modified), 'training_service/') ||
-      contains(join(github.event.head_commit.added), 'training_service/') ||
-      contains(join(github.event.head_commit.removed), 'training_service/')
+      contains(join(github.event.commits.*.modified), 'training_service/') ||
+      contains(join(github.event.commits.*.added), 'training_service/') ||
+      contains(join(github.event.commits.*.removed), 'training_service/')
     runs-on: ubuntu-latest
 
     steps:
@@ -121,10 +121,9 @@ jobs:
 
   deploy-training-pipeline:
     if: >
-      contains(join(github.event.head_commit.modified), 'ml_pipeline/') ||
-      contains(join(github.event.head_commit.added), 'ml_pipeline/') ||
-      contains(join(github.event.head_commit.removed), 'ml_pipeline/')
-
+      contains(join(github.event.commits.*.modified), 'ml_pipeline/') ||
+      contains(join(github.event.commits.*.added), 'ml_pipeline/') ||
+      contains(join(github.event.commits.*.removed), 'ml_pipeline/')
     runs-on: ubuntu-latest
 
     steps:
