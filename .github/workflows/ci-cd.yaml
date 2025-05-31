@@ -50,19 +50,19 @@ jobs:
         run: gcloud components install gke-gcloud-auth-plugin
 
       - name: Configure Docker to use Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.TIME_ZONE }}-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev
 
       - name: Build Docker image for serving
         run: |
-          docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest ./serving
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest ./serving
 
       - name: Push Docker image for serving
         run: |
-          docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest
 
       - name: Get GKE credentials for serving cluster
         run: |
-          gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} --zone ${{ secrets.TIME_ZONE_GKE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Confirm current context (safety check)
         run: |
@@ -104,23 +104,26 @@ jobs:
       - name: Install gke-gcloud-auth-plugin
         run: gcloud components install gke-gcloud-auth-plugin
 
+      - name: Configure Docker to use Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev
+
       - name: Build Docker image for training service
         run: |
-          docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest ./training_service
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest ./training_service
 
       - name: Push Docker image for training service
         run: |
-          docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest
 
       - name: Get GKE credentials
         run: |
-          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} --zone ${{ secrets.TIME_ZONE_GKE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Confirm current context (safety check)
         run: |
           echo "Current context:"
           kubectl config current-context
-          if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
+          if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_training-cluster" ]]; then
             echo "❌ Wrong context! Aborting."
             exit 1
           fi
@@ -156,10 +159,13 @@ jobs:
       - name: Install gke-gcloud-auth-plugin
         run: gcloud components install gke-gcloud-auth-plugin
 
+      - name: Configure Docker to use Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev
+
       - name: Build Docker image for training pipeline
         run: |
-          docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest ./ml_pipeline
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest ./ml_pipeline
 
       - name: Push Docker image for training pipeline
         run: |
-          docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest
