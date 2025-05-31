@@ -14,7 +14,6 @@ templates = Jinja2Templates(directory="app/templates")
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-
 @app.post("/submit")
 async def submit_training(
     dataset: UploadFile = None,
