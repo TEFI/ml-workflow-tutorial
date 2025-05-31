@@ -6,147 +6,160 @@ on:
       - main
 
 jobs:
-  deploy-serving:
-    if: >
-      contains(join(github.event.commits.*.modified), 'serving/') ||
-      contains(join(github.event.commits.*.added), 'serving/') ||
-      contains(join(github.event.commits.*.removed), 'serving/')
+  filter-changes:
     runs-on: ubuntu-latest
-
+    outputs:
+      serving: ${{ steps.filter.outputs.serving }}
+      training_service: ${{ steps.filter.outputs.training_service }}
+      ml_pipeline: ${{ steps.filter.outputs.ml_pipeline }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_KEY }}
+      - name: Check changed paths
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            serving:
+              - 'serving/**'
+            training_service:
+              - 'training_service/**'
+            ml_pipeline:
+              - 'ml_pipeline/**'
 
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
+  deploy-serving:
+    needs: filter-changes
+    if: needs.filter-changes.outputs.serving == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Install gke-gcloud-auth-plugin
-      run: gcloud components install gke-gcloud-auth-plugin
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_KEY }}
 
-    - name: Configure Docker to use Artifact Registry
-      run: gcloud auth configure-docker ${{ secrets.TIME_ZONE }}-docker.pkg.dev
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Build Docker image for serving
-      run: |
-        docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest ./serving
+      - name: Install gke-gcloud-auth-plugin
+        run: gcloud components install gke-gcloud-auth-plugin
 
-    - name: Push Docker image for serving
-      run: |
-        docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest
+      - name: Configure Docker to use Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.TIME_ZONE }}-docker.pkg.dev
 
-    - name: Get GKE credentials for serving cluster
-      run: |
-        gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
+      - name: Build Docker image for serving
+        run: |
+          docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest ./serving
 
-    - name: Confirm current context (safety check)
-      run: |
-        echo "Current context:"
-        kubectl config current-context
-        if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
-          echo "❌ Wrong context! Aborting."
-          exit 1
-        fi
+      - name: Push Docker image for serving
+        run: |
+          docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest
 
-    - name: Deploy serving to GKE
-      run: |
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
+      - name: Get GKE credentials for serving cluster
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Rollout restart serving deployment
-      run: |
-        kubectl rollout restart deployment/serving-api
-        kubectl rollout status deployment/serving-api
+      - name: Confirm current context (safety check)
+        run: |
+          echo "Current context:"
+          kubectl config current-context
+          if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
+            echo "❌ Wrong context! Aborting."
+            exit 1
+          fi
+
+      - name: Deploy serving to GKE
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: Rollout restart serving deployment
+        run: |
+          kubectl rollout restart deployment/serving-api
+          kubectl rollout status deployment/serving-api
 
   deploy-training-service:
-    if: >
-      contains(join(github.event.commits.*.modified), 'training_service/') ||
-      contains(join(github.event.commits.*.added), 'training_service/') ||
-      contains(join(github.event.commits.*.removed), 'training_service/')
+    needs: filter-changes
+    if: needs.filter-changes.outputs.training_service == 'true'
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_KEY }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_KEY }}
 
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Install gke-gcloud-auth-plugin
-      run: gcloud components install gke-gcloud-auth-plugin
+      - name: Install gke-gcloud-auth-plugin
+        run: gcloud components install gke-gcloud-auth-plugin
 
-    - name: Build Docker image for training
-      run: |
-        docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest ./training_service
+      - name: Build Docker image for training service
+        run: |
+          docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest ./training_service
 
-    - name: Push Docker image for training
-      run: |
-        docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest
+      - name: Push Docker image for training service
+        run: |
+          docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest
 
-    - name: Get GKE credentials
-      run: |
-        gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Confirm current context (safety check)
-      run: |
-        echo "Current context:"
-        kubectl config current-context
-        if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
-          echo "❌ Wrong context! Aborting."
-          exit 1
-        fi
+      - name: Confirm current context (safety check)
+        run: |
+          echo "Current context:"
+          kubectl config current-context
+          if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
+            echo "❌ Wrong context! Aborting."
+            exit 1
+          fi
 
-    - name: Deploy serving to GKE
-      run: |
-        kubectl apply -f k8s/deployment_training_service.yaml
-        kubectl apply -f k8s/service_training_service.yaml
+      - name: Deploy training service to GKE
+        run: |
+          kubectl apply -f k8s/deployment_training_service.yaml
+          kubectl apply -f k8s/service_training_service.yaml
 
-    - name: Rollout restart serving deployment
-      run: |
-        kubectl rollout restart deployment/training-service-api
-        kubectl rollout status deployment/training-service-api
+      - name: Rollout restart training service deployment
+        run: |
+          kubectl rollout restart deployment/training-service-api
+          kubectl rollout status deployment/training-service-api
 
   deploy-training-pipeline:
-    if: >
-      contains(join(github.event.commits.*.modified), 'ml_pipeline/') ||
-      contains(join(github.event.commits.*.added), 'ml_pipeline/') ||
-      contains(join(github.event.commits.*.removed), 'ml_pipeline/')
+    needs: filter-changes
+    if: needs.filter-changes.outputs.ml_pipeline == 'true'
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_KEY }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_KEY }}
 
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Install gke-gcloud-auth-plugin
-      run: gcloud components install gke-gcloud-auth-plugin
+      - name: Install gke-gcloud-auth-plugin
+        run: gcloud components install gke-gcloud-auth-plugin
 
-    - name: Build Docker image for training
-      run: |
-        docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest ./training
+      - name: Build Docker image for training pipeline
+        run: |
+          docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest ./ml_pipeline
 
-    - name: Push Docker image for training
-      run: |
-        docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/titanic-repo/training:latest
+      - name: Push Docker image for training pipeline
+        run: |
+          docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest
