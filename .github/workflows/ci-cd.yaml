@@ -109,11 +109,11 @@ jobs:
 
       - name: Build Docker image for training service
         run: |
-          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest ./training_service
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service-api:latest ./training_service
 
       - name: Push Docker image for training service
         run: |
-          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service-api:latest
 
       - name: Get GKE credentials
         run: |
