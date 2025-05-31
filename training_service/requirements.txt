@@ -1,0 +1,6 @@
+fastapi
+gunicorn
+kubernetes
+python-multipart
+jinja2
+google-cloud-storage

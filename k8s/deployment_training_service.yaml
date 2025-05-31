@@ -1,21 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: serving-api
+  name: training-service-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: serving-api
+      app: training-service-api
   template:
     metadata:
       labels:
-        app: serving-api
+        app: training-service-api
     spec:
       containers:
-      - name: serving-api
-        #image: gcr.io/GCP_PROJECT_ID/serving-api:latest
-        image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/serving-repo/serving-api:latest
+      - name: training-service-api
+        image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/training-service-repo/training-service-api:latest
         ports:
         - containerPort: 8000
         env:

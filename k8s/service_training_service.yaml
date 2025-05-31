@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: serving-api-service
+  name: training-service-api-service
 spec:
   type: LoadBalancer
   selector:
-    app: serving-api
+    app: training-service-api
   ports:
   - protocol: TCP
     port: 80

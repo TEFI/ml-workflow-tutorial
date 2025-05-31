@@ -6,7 +6,11 @@ on:
       - main
 
 jobs:
-  build-deploy:
+  deploy-serving:
+    if: >
+      contains(join(github.event.head_commit.modified), 'serving/') ||
+      contains(join(github.event.head_commit.added), 'serving/') ||
+      contains(join(github.event.head_commit.removed), 'serving/')
     runs-on: ubuntu-latest
 
     steps:
@@ -21,37 +25,129 @@ jobs:
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Install gke-gcloud-auth-plugin
+      run: gcloud components install gke-gcloud-auth-plugin
+
+    - name: Configure Docker to use Artifact Registry
+      run: gcloud auth configure-docker ${{ secrets.TIME_ZONE }}-docker.pkg.dev
+
+    - name: Build Docker image for serving
+      run: |
+        docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest ./serving
+
+    - name: Push Docker image for serving
+      run: |
+        docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest
+
+    - name: Get GKE credentials for serving cluster
+      run: |
+        gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Confirm current context (safety check)
+      run: |
+        echo "Current context:"
+        kubectl config current-context
+        if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
+          echo "❌ Wrong context! Aborting."
+          exit 1
+        fi
+
+    - name: Deploy serving to GKE
+      run: |
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+
+    - name: Rollout restart serving deployment
+      run: |
+        kubectl rollout restart deployment/serving-api
+        kubectl rollout status deployment/serving-api
+
+  deploy-training-service:
+    if: >
+      contains(join(github.event.head_commit.modified), 'training_service/') ||
+      contains(join(github.event.head_commit.added), 'training_service/') ||
+      contains(join(github.event.head_commit.removed), 'training_service/')
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_KEY }}
 
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: ${{ secrets.GCP_TITANIC_PROJECT_ID }}
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
 
     - name: Install gke-gcloud-auth-plugin
-      run: |
-        gcloud components install gke-gcloud-auth-plugin
+      run: gcloud components install gke-gcloud-auth-plugin
 
-    - name: Configure Docker to use Artifact Registry
-      run: gcloud auth configure-docker us-central1-docker.pkg.dev
-
-    - name: Build Docker image
+    - name: Build Docker image for training
       run: |
-        docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-repo/titanic-api:latest ./api
+        docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest ./training_service
 
-    - name: Push Docker image to Artifact Registry
+    - name: Push Docker image for training
       run: |
-        docker push us-central1-docker.pkg.dev/${{ secrets.GCP_TITANIC_PROJECT_ID }}/titanic-repo/titanic-api:latest
+        docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service:latest
 
     - name: Get GKE credentials
       run: |
-        gcloud container clusters get-credentials ${{ secrets.TITANIC_CLUSTER }} --zone us-central1-a
+        gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} --zone ${{ secrets.TIME_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-    #- name: Replace project ID in deployment.yaml
-    #  run: |
-    #    sed "s|GCP_PROJECT_ID|${{ secrets.GCP_TITANIC_PROJECT_ID }}|g" k8s/deployment.template.yaml > k8s/deployment.yaml
-
-    - name: Deploy to GKE
+    - name: Confirm current context (safety check)
       run: |
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
+        echo "Current context:"
+        kubectl config current-context
+        if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
+          echo "❌ Wrong context! Aborting."
+          exit 1
+        fi
+
+    - name: Deploy serving to GKE
+      run: |
+        kubectl apply -f k8s/deployment_training_service.yaml
+        kubectl apply -f k8s/service_training_service.yaml
+
+    - name: Rollout restart serving deployment
+      run: |
+        kubectl rollout restart deployment/training-service-api
+        kubectl rollout status deployment/training-service-api
+
+  deploy-training-pipeline:
+    if: >
+      contains(join(github.event.head_commit.modified), 'ml_pipeline/') ||
+      contains(join(github.event.head_commit.added), 'ml_pipeline/') ||
+      contains(join(github.event.head_commit.removed), 'ml_pipeline/')
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_KEY }}
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Install gke-gcloud-auth-plugin
+      run: gcloud components install gke-gcloud-auth-plugin
+
+    - name: Build Docker image for training
+      run: |
+        docker build -t ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest ./training
+
+    - name: Push Docker image for training
+      run: |
+        docker push ${{ secrets.TIME_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/titanic-repo/training:latest
