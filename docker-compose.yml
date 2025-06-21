@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  model-server:
+    build:
+      context: ./services/model-server  # Path to the Dockerfile and source code
+    container_name: model-server        # Optional name for the container
+    ports:
+      - "8000:8000"                     # Map container port 8000 to host port 8000
+    env_file:
+      - .env                            # Load environment variables from the .env file
+    volumes:
+      - ./secrets:/secrets:ro          # Mount local secrets folder into container as read-only
