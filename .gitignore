@@ -1,3 +1,10 @@
+# ⚙️ Python virtual environments
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.so
+
 .vscode/
 secrets/credentials.json
 .env
