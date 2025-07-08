@@ -24,6 +24,9 @@ plan.out
 .terraform/
 .terraform.lock.hcl
 
-# Sensitive variable files (si los usas)
+# Sensitive variable files
 *.tfvars
 *.tfvars.json
+
+# Google GCP keys
+keys
