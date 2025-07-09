@@ -21,6 +21,7 @@ ml-workflow-tutorial/
 └── docker-compose.yml      # Orchestrates multi-container setup
 ```
 
+
 ## 🔐 Creating a Terraform Service Account in GCP
 
 To manage GCP infrastructure with Terraform, it's recommended to create a dedicated service account with the necessary permissions. Below are the steps to create one called `terraform-deployer`.
@@ -39,11 +40,22 @@ Replace `PROJECT_ID` with your actual GCP project ID. If you're using PowerShell
 
 ```powershell
 $SA_EMAIL="terraform-deployer@PROJECT_ID.iam.gserviceaccount.com"
+
+# Core IAM permissions
 gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/iam.serviceAccountAdmin"
 gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/iam.serviceAccountUser"
+gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/resourcemanager.projectIamAdmin"
+
+# GKE and Artifact Registry
 gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/container.admin"
-gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/storage.admin"
 gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/artifactregistry.admin"
+
+# Compute Engine and Networking
+gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/compute.instanceAdmin.v1"
+gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/compute.networkAdmin"
+
+# Storage, Logging, Monitoring
+gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/storage.admin"
 gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/logging.logWriter"
 gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA_EMAIL" --role="roles/monitoring.metricWriter"
 ```
