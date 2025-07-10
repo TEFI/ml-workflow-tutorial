@@ -88,6 +88,71 @@ provider "google" {
 Now Terraform is ready to deploy resources using your new service account.
 
 
+# 🔐 Setting up GitHub Secrets for CI/CD
+
+This guide explains how to configure the required GitHub secrets for the CI/CD pipeline defined in `.github/workflows/ci-cd.yaml`.
+
+GitHub Actions uses encrypted secrets to manage sensitive information (e.g., credentials, project IDs, cluster names). These secrets are injected into your workflow using `${{ secrets.<SECRET_NAME> }}`.
+
+## ✅ Required Secrets
+
+| Secret Name           | Description |
+|------------------------|-------------|
+| `GCP_KEY`             | The full content of your service account key in JSON format. |
+| `GCP_PROJECT_ID`      | Your Google Cloud Project ID. |
+| `TIME_ZONE_DOCKER`    | The region name used in your Artifact Registry URL (e.g., `us-central1`). |
+| `TIME_ZONE_GKE`       | The zone of your GKE clusters (e.g., `us-central1-a`). |
+| `SERVING_CLUSTER`     | Name of the GKE cluster for the `serving` deployment. |
+| `TRAINING_CLUSTER`    | Name of the GKE cluster for the `training_service` deployment. |
+
+## 🛠️ How to Add Secrets in GitHub
+
+1. Go to your repository on GitHub.
+2. Click on **Settings**.
+3. In the sidebar, select **Secrets and variables > Actions**.
+4. Click **New repository secret**.
+5. Enter the **name** and **value** of the secret.
+6. Click **Add secret**.
+
+Repeat this process for each of the required secrets listed above.
+
+## 🔐 Example: Creating `GCP_KEY` Secret
+
+If you have a JSON key file for your service account (e.g., `terraform-deployer.json`), you can create the secret with:
+
+```bash
+gh secret set GCP_KEY < terraform-deployer.json
+```
+
+Or paste its content directly when adding it manually in the GitHub UI.
+
+## 📦 Artifact Registry URL Format
+
+The `TIME_ZONE_DOCKER` secret should match the region of your Artifact Registry and is used to form the URL:
+
+```
+<TIME_ZONE_DOCKER>-docker.pkg.dev/<GCP_PROJECT_ID>/<REPO_NAME>/<IMAGE_NAME>
+```
+
+Example:
+```
+us-central1-docker.pkg.dev/sodium-pager-461309-p3/serving-repo/serving-api
+```
+
+## 🧠 Pro Tip
+
+Avoid hardcoding secrets or sensitive values directly in your workflow files. Always use `${{ secrets.NAME }}` to keep your credentials safe.
+
+---
+
+Once your secrets are configured, your CI/CD pipeline will be able to:
+- Authenticate with Google Cloud
+- Build and push Docker images
+- Deploy to the correct GKE cluster
+
+Happy deploying 🚀
+
+
 ## 🚀 Getting Started
 
 ### 1. Clone the repository
