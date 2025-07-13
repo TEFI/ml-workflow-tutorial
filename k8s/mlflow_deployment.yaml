@@ -12,6 +12,8 @@ spec:
       labels:
         app: mlflow
     spec:
+      nodeSelector:
+        node-role: training
       containers:
         - name: mlflow
           image: ghcr.io/mlflow/mlflow:v2.12.1
