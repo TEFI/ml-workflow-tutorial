@@ -23,7 +23,7 @@ async def submit_training(
     min_samples_split: int = Form(...),
     min_samples_leaf: int = Form(...),
 ):
-    # test cicd
+
     #job_name = launch_training_job(payload)
     #return {"message": f"Training job {job_name} started!"}
     return {
