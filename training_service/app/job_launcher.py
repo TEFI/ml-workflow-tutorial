@@ -1,39 +1,27 @@
 import uuid
-import datetime
-from kubernetes import client, config
+from google.cloud import run_v2
+from google.cloud.run_v2.types import Job, TaskTemplate, Container
 
-def launch_training_job(payload):
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    short_uuid = str(uuid.uuid4())[:8]
-    job_name = f"training-job-{timestamp}-{short_uuid}"
+from app.config import PARENT
 
-    config.load_incluster_config()
-    batch_v1 = client.BatchV1Api()
-
-    job = client.V1Job(
-        metadata=client.V1ObjectMeta(name=job_name),
-        spec=client.V1JobSpec(
-            template=client.V1PodTemplateSpec(
-                spec=client.V1PodSpec(
-                    containers=[
-                        client.V1Container(
-                            name="trainer",
-                            image="us-central1-docker.pkg.dev/YOUR_PROJECT_ID/training-repo/training-image:latest",
-                            env=[
-                                client.V1EnvVar(name="DATASET_PATH", value=payload.get("dataset_path", "")),
-                                client.V1EnvVar(name="OUTPUT_PATH", value=payload.get("output_path", ""))
-                            ],
-                            resources=client.V1ResourceRequirements(
-                                limits={"cpu": "2", "memory": "4Gi"}
-                            )
-                        )
-                    ],
-                    restart_policy="Never"
-                )
+def launch_training_job(image_uri: str, args: list[str]) -> str:
+    client = run_v2.JobsClient()
+    job_id = f"train-job-{uuid.uuid4().hex[:8]}"
+    
+    job = Job(
+        name=f"{PARENT}/jobs/{job_id}",
+        template=run_v2.ExecutionTemplate(
+            task_count=1,
+            template=TaskTemplate(
+                containers=[Container(image=image_uri, args=args)],
+                max_retries=1,
+                timeout={"seconds": 3600},
             ),
-            backoff_limit=2
-        )
+        ),
     )
 
-    batch_v1.create_namespaced_job(namespace="default", body=job)
-    return job_name
+    operation = client.create_job(parent=PARENT, job=job, job_id=job_id)
+    operation.result()
+    client.run_job(name=f"{PARENT}/jobs/{job_id}")
+
+    return job_id

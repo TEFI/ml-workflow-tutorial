@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 gunicorn
-kubernetes
+google-cloud-run
 python-multipart
 jinja2
 google-cloud-storage

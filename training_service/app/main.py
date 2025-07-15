@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Request, UploadFile, Form
+from fastapi import FastAPI, Request, UploadFile, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.job_launcher import launch_training_job
-
+from app.gcs_utils import upload_file_to_gcs
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -17,27 +17,39 @@ async def read_root(request: Request):
 @app.post("/submit")
 async def submit_training(
     dataset: UploadFile = None,
-    gcs_path: str = Form(default=""),
+    gcs_path: str = Form(""),
     n_estimators: int = Form(...),
     max_depth: int = Form(...),
     min_samples_split: int = Form(...),
     min_samples_leaf: int = Form(...),
 ):
-    # test
-    #job_name = launch_training_job(payload)
-    #return {"message": f"Training job {job_name} started!"}
+    # Check if either dataset was uploaded or gcs_path is provided
+    if not dataset and not gcs_path:
+        raise HTTPException(status_code=400, detail="Please upload a dataset file or provide a GCS path.")
+
+    # Upload the file to GCS if provided
+    if dataset:
+        bucket_name = "your-dataset-bucket-name"  # 🔁 Replace with your bucket
+        gcs_path = upload_file_to_gcs(dataset, bucket_name)
+
+    # Prepare the training job arguments
+    args = [
+        f"--n_estimators={n_estimators}",
+        f"--max_depth={max_depth}",
+        f"--min_samples_split={min_samples_split}",
+        f"--min_samples_leaf={min_samples_leaf}",
+        f"--gcs_path={gcs_path}"
+    ]
+
+    # Docker image for training job
+    image_uri = "us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer/trainer:latest"
+
+    # Launch training job (GKE or Cloud Run)
+    job_id = launch_training_job(image_uri=image_uri, args=args)
+
     return {
-        "message": "Received submission",
-        "dataset": dataset.filename if dataset else None,
+        "message": f"✅ Training job `{job_id}` launched!",
+        "image": image_uri,
         "gcs_path": gcs_path,
-        "model": "random_forest",
-        "n_estimators": n_estimators,
-        "max_depth": max_depth,
-        "min_samples_split": min_samples_split,
-        "min_samples_leaf": min_samples_leaf
+        "args": args
     }
-
-
-
-
-
