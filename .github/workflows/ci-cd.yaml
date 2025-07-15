@@ -126,8 +126,8 @@ jobs:
 
       - name: Deploy trainer API to GKE
         run: |
-          kubectl apply -f k8s/deployment_training_service.yaml
-          kubectl apply -f k8s/service_training_service.yaml
+          kubectl apply -f k8s/deployment_trainer_api.yaml
+          kubectl apply -f k8s/service_trainer_api.yaml
 
       - name: Rollout restart trainer API deployment
         run: |
