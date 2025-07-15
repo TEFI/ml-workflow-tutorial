@@ -42,7 +42,7 @@ async def submit_training(
     ]
 
     # Docker image for training job
-    image_uri = "us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer/trainer:latest"
+    image_uri = "us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer/training:latest"
 
     # Launch training job (GKE or Cloud Run)
     job_id = launch_training_job(image_uri=image_uri, args=args)
