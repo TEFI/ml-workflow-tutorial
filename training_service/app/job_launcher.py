@@ -10,13 +10,13 @@ def launch_training_job(image_uri: str, args: list[str]) -> str:
     job = Job(
         template=ExecutionTemplate(
             task_count=1,
+            service_account="terraform-deployer@sodium-pager-461309-p3.iam.gserviceaccount.com",  # ✅ AQUÍ VA
             template=TaskTemplate(
                 containers=[Container(image=image_uri, args=args)],
                 max_retries=1,
                 timeout={"seconds": 3600},
             ),
-        ),
-        service_account="terraform-deployer@sodium-pager-461309-p3.iam.gserviceaccount.com"
+        )
     )
 
     operation = client.create_job(parent=PARENT, job=job, job_id=job_id)
