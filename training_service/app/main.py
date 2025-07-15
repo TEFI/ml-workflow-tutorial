@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.job_launcher import launch_training_job
 from app.gcs_utils import upload_file_to_gcs
+from app.config import BUCKET_NAME
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -29,8 +30,7 @@ async def submit_training(
 
     # Upload the file to GCS if provided
     if dataset:
-        bucket_name = "your-dataset-bucket-name"  # 🔁 Replace with your bucket
-        gcs_path = upload_file_to_gcs(dataset, bucket_name)
+        gcs_path = upload_file_to_gcs(dataset, BUCKET_NAME)
 
     # Prepare the training job arguments
     args = [

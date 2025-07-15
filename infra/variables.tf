@@ -36,3 +36,18 @@ variable "training_cluster_name" {
   default     = "ml-training-cluster"
 }
 
+variable "gcp_key_json_content" {
+  description = "Base64-encoded content of the GCP service account key JSON file."
+  type        = string
+  sensitive   = true
+}
+
+variable "bucket_name" {
+  description = "Name of the GCS bucket"
+  type        = string
+}
+
+variable "blob_name" {
+  description = "Name of the model blob in the bucket"
+  type        = string
+}
