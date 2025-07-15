@@ -7,9 +7,8 @@ from app.config import PARENT
 def launch_training_job(image_uri: str, args: list[str]) -> str:
     client = run_v2.JobsClient()
     job_id = f"train-job-{uuid.uuid4().hex[:8]}"
-    
+
     job = Job(
-        name=f"{PARENT}/jobs/{job_id}",
         template=run_v2.ExecutionTemplate(
             task_count=1,
             template=TaskTemplate(
@@ -22,6 +21,7 @@ def launch_training_job(image_uri: str, args: list[str]) -> str:
 
     operation = client.create_job(parent=PARENT, job=job, job_id=job_id)
     operation.result()
+
     client.run_job(name=f"{PARENT}/jobs/{job_id}")
 
     return job_id
