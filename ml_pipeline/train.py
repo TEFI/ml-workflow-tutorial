@@ -34,6 +34,8 @@ for col in ['Name', 'Ticket', 'Cabin']:
 X = pd.get_dummies(X)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
+mlflow.set_tracking_uri("file:/tmp/mlruns")
+
 # Training
 mlflow.start_run()
 clf = RandomForestClassifier(
