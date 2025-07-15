@@ -27,7 +27,7 @@ mlflow.start_run()
 # Train model
 clf = RandomForestClassifier()
 clf.fit(X_train, y_train)
-
+#test cicd
 score = clf.score(X_test, y_test)
 mlflow.log_metric("accuracy", score)
 
