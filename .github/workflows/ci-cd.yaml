@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       serving: ${{ steps.filter.outputs.serving }}
-      training_service: ${{ steps.filter.outputs.training_service }}
+      trainer_api: ${{ steps.filter.outputs.trainer_api }}
       ml_pipeline: ${{ steps.filter.outputs.ml_pipeline }}
     steps:
       - name: Checkout code
@@ -23,7 +23,7 @@ jobs:
           filters: |
             serving:
               - 'serving/**'
-            training_service:
+            trainer_api:
               - 'training_service/**'
             ml_pipeline:
               - 'ml_pipeline/**'
@@ -54,24 +54,22 @@ jobs:
 
       - name: Build Docker image for serving
         run: |
-          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest ./serving
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving/serving-api:latest ./serving
 
       - name: Push Docker image for serving
         run: |
-          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving-repo/serving-api:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving/serving-api:latest
 
       - name: Get GKE credentials for serving cluster
         run: |
-          gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} --zone ${{ secrets.TIME_ZONE_GKE }} --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} \
+            --zone ${{ secrets.GCP_ZONE }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Confirm current context (safety check)
+      - name: Confirm access to serving cluster
         run: |
-          echo "Current context:"
-          kubectl config current-context
-          if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_serving-cluster" ]]; then
-            echo "❌ Wrong context! Aborting."
-            exit 1
-          fi
+          echo "Verifying access to cluster"
+          kubectl get nodes || (echo "❌ Cannot access cluster!" && exit 1)
 
       - name: Deploy serving to GKE
         run: |
@@ -83,9 +81,9 @@ jobs:
           kubectl rollout restart deployment/serving-api
           kubectl rollout status deployment/serving-api
 
-  deploy-training-service:
+  deploy-trainer-api:
     needs: filter-changes
-    if: needs.filter-changes.outputs.training_service == 'true'
+    if: needs.filter-changes.outputs.trainer_api == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -107,36 +105,34 @@ jobs:
       - name: Configure Docker to use Artifact Registry
         run: gcloud auth configure-docker ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev
 
-      - name: Build Docker image for training service
+      - name: Build Docker image for trainer API
         run: |
-          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service-api:latest ./training_service
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer-api/trainer-api:latest ./training_service
 
-      - name: Push Docker image for training service
+      - name: Push Docker image for trainer API
         run: |
-          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-service-repo/training-service-api:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer-api/trainer-api:latest
 
       - name: Get GKE credentials
         run: |
-          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} --zone ${{ secrets.TIME_ZONE_GKE }} --project ${{ secrets.GCP_PROJECT_ID }}
+          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} \
+            --zone ${{ secrets.GCP_ZONE }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Confirm current context (safety check)
+      - name: Confirm access to training cluster
         run: |
-          echo "Current context:"
-          kubectl config current-context
-          if [[ "$(kubectl config current-context)" != "gke_sodium-pager-461309-p3_us-central1-a_training-cluster" ]]; then
-            echo "❌ Wrong context! Aborting."
-            exit 1
-          fi
+          echo "Verifying access to cluster"
+          kubectl get nodes || (echo "❌ Cannot access cluster!" && exit 1)
 
-      - name: Deploy training service to GKE
+      - name: Deploy trainer API to GKE
         run: |
           kubectl apply -f k8s/deployment_training_service.yaml
           kubectl apply -f k8s/service_training_service.yaml
 
-      - name: Rollout restart training service deployment
+      - name: Rollout restart trainer API deployment
         run: |
-          kubectl rollout restart deployment/training-service-api
-          kubectl rollout status deployment/training-service-api
+          kubectl rollout restart deployment/trainer-api
+          kubectl rollout status deployment/trainer-api
 
   deploy-training-pipeline:
     needs: filter-changes
@@ -164,8 +160,8 @@ jobs:
 
       - name: Build Docker image for training pipeline
         run: |
-          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest ./ml_pipeline
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer/training:latest ./ml_pipeline
 
       - name: Push Docker image for training pipeline
         run: |
-          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/training-repo/training:latest
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer/training:latest

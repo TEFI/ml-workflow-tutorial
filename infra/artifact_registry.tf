@@ -1,27 +1,27 @@
-resource "google_artifact_registry_repository" "serving_repo" {
+resource "google_artifact_registry_repository" "serving" {
   location      = var.region
-  repository_id = "serving-repo"
+  repository_id = "serving"
   format        = "DOCKER"
-  description   = "Repository for serving Docker images"
+  description   = "Docker images for model serving"
 }
 
-resource "google_artifact_registry_repository" "training_repo" {
+resource "google_artifact_registry_repository" "trainer" {
   location      = var.region
-  repository_id = "training-repo"
+  repository_id = "trainer"
   format        = "DOCKER"
-  description   = "Repository for training Docker images"
+  description   = "Docker images for model training jobs"
 }
 
-resource "google_artifact_registry_repository" "training_service_repo" {
+resource "google_artifact_registry_repository" "trainer_api" {
   location      = var.region
-  repository_id = "training-service-repo"
+  repository_id = "trainer-api"
   format        = "DOCKER"
-  description   = "Repository for training service images"
+  description   = "Docker images for training API service that launches jobs"
 }
 
-resource "google_artifact_registry_repository" "monitor_repo" {
+resource "google_artifact_registry_repository" "monitor" {
   location      = var.region
-  repository_id = "monitor-repo"
+  repository_id = "monitor"
   format        = "DOCKER"
-  description   = "Repository for monitoring service images"
+  description   = "Docker images for monitoring services"
 }
