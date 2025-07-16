@@ -66,18 +66,6 @@ jobs:
             --zone ${{ secrets.GCP_ZONE }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Set and confirm kubectl context
-        run: |
-          CONTEXT_NAME=gke_${{ secrets.GCP_PROJECT_ID }}_${{ secrets.GCP_ZONE }}_${{ secrets.SERVING_CLUSTER }}
-          kubectl config use-context "$CONTEXT_NAME"
-          echo "✅ Using context: $CONTEXT_NAME"
-          kubectl config current-context
-
-      - name: Confirm access to serving cluster
-        run: |
-          echo "Verifying access to cluster"
-          kubectl get nodes || (echo "❌ Cannot access cluster!" && exit 1)
-
       - name: Deploy serving to GKE
         run: |
           kubectl apply -f k8s/deployment_serving_api.yaml

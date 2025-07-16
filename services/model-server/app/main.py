@@ -7,6 +7,6 @@ app = FastAPI(
     description="A lightweight API to serve machine learning model predictions.",
     version="0.1.0"
 )
-
+# test cicd
 # Register API routes
 app.include_router(router)

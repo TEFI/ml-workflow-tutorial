@@ -46,7 +46,7 @@ async def submit_training(
 
     # Launch training job (GKE or Cloud Run)
     job_id = launch_training_job(image_uri=image_uri, args=args)
-
+    # test cicd
     return {
         "message": f"✅ Training job `{job_id}` launched!",
         "image": image_uri,
