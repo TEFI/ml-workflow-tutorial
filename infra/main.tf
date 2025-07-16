@@ -10,3 +10,5 @@ resource "google_project_service" "cloud_run" {
   service = "run.googleapis.com"
   project = var.project_id
 }
+
+data "google_client_config" "default" {}

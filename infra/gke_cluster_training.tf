@@ -1,5 +1,3 @@
-data "google_client_config" "default" {}
-
 # GKE training cluster
 resource "google_container_cluster" "training" {
   name     = var.training_cluster_name
