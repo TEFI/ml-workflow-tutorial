@@ -22,7 +22,7 @@ jobs:
         with:
           filters: |
             serving:
-              - 'serving/**'
+              - 'services/model-server/**'
             trainer_api:
               - 'training_service/**'
             ml_pipeline:
