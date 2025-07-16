@@ -54,7 +54,7 @@ jobs:
 
       - name: Build Docker image for serving
         run: |
-          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving/serving-api:latest ./serving
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving/serving-api:latest ./services/model-server
 
       - name: Push Docker image for serving
         run: |
