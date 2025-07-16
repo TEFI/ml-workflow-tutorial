@@ -1,16 +1,19 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.utils import download_model_from_gcs, predict_with_model
+import traceback
 
 router = APIRouter()
 
 # Load the model at startup
 try:
     model = download_model_from_gcs()
+    print("✅ Model loaded successfully.")
 except Exception as e:
     model = None
-    print(f"Model loading failed: {e}")
-
+    print("❌ Model loading failed!")
+    traceback.print_exc() 
+    
 # Define expected input schema strictly
 class PredictionInput(BaseModel):
     Pclass: int
@@ -34,4 +37,5 @@ def predict(input_data: PredictionInput):
         prediction = predict_with_model(model, features)
         return {"prediction": int(prediction[0])}
     except Exception as e:
+        traceback.print_exc()  # 👈 Y aquí también
         raise HTTPException(status_code=400, detail=f"Prediction failed: {str(e)}")
