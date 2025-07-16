@@ -66,6 +66,13 @@ jobs:
             --zone ${{ secrets.GCP_ZONE }} \
             --project ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Set and confirm kubectl context
+        run: |
+          CONTEXT_NAME=gke_${{ secrets.GCP_PROJECT_ID }}_${{ secrets.GCP_ZONE }}_${{ secrets.SERVING_CLUSTER }}
+          kubectl config use-context "$CONTEXT_NAME"
+          echo "✅ Using context: $CONTEXT_NAME"
+          kubectl config current-context
+
       - name: Confirm access to serving cluster
         run: |
           echo "Verifying access to cluster"
@@ -79,7 +86,7 @@ jobs:
       - name: Rollout restart serving deployment
         run: |
           kubectl rollout restart deployment/serving-api
-          kubectl rollout status deployment/serving-api
+          kubectl rollout status deployment/serving-api --timeout=120s
 
   deploy-trainer-api:
     needs: filter-changes
