@@ -15,6 +15,7 @@ spec:
       containers:
       - name: serving-api
         image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/serving/serving-api:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
