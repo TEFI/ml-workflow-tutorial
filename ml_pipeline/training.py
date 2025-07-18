@@ -8,10 +8,11 @@ from google.cloud import storage
 
 
 def train_model(args):
-    mlflow.set_tracking_uri("file:/tmp/mlruns")
+    # Set remote MLflow tracking URI (Kubernetes service)
+    mlflow.set_tracking_uri("http://mlflow.default.svc.cluster.local:5000")
     mlflow.start_run()
 
-    # Cargar CSV (GCS o local)
+    # Load CSV (from GCS or local path)
     if args.gcs_path.startswith("gs://"):
         import gcsfs
         fs = gcsfs.GCSFileSystem()
@@ -20,7 +21,7 @@ def train_model(args):
     else:
         data = pd.read_csv(args.gcs_path)
 
-    # Preprocesamiento
+    # Preprocessing
     X = data.drop(columns=["Survived"])
     y = data["Survived"]
     for col in ["Name", "Ticket", "Cabin"]:
@@ -29,7 +30,7 @@ def train_model(args):
     X = pd.get_dummies(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    # Entrenamiento
+    # Train model
     clf = RandomForestClassifier(
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
@@ -39,7 +40,7 @@ def train_model(args):
     clf.fit(X_train, y_train)
     accuracy = clf.score(X_test, y_test)
 
-    # Log en MLflow
+    # Log parameters and metrics to MLflow
     mlflow.log_param("n_estimators", args.n_estimators)
     mlflow.log_param("max_depth", args.max_depth)
     mlflow.log_param("min_samples_split", args.min_samples_split)
@@ -47,12 +48,12 @@ def train_model(args):
     mlflow.log_param("dataset_path", args.gcs_path)
     mlflow.log_metric("accuracy", accuracy)
 
-    # Guardar modelo local
+    # Save model locally
     local_model_path = "random_forest_model.joblib"
     joblib.dump(clf, local_model_path)
     mlflow.sklearn.log_model(clf, "model")
 
-    # Subir a GCS
+    # Upload model to GCS
     model_filename = os.path.basename(args.gcs_path).replace(".csv", "_model.joblib")
     destination_path = f"models/{model_filename}"
     upload_to_gcs(local_model_path, f"gs://ml-artifacts-tutorial/{destination_path}")
@@ -64,6 +65,7 @@ def upload_to_gcs(local_file: str, gcs_uri: str):
     if not gcs_uri.startswith("gs://"):
         raise ValueError("Destination GCS path must start with 'gs://'")
 
+    # Parse bucket name and blob path
     bucket_name, blob_path = gcs_uri.replace("gs://", "").split("/", 1)
     client = storage.Client()
     bucket = client.bucket(bucket_name)
