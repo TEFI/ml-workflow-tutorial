@@ -9,7 +9,7 @@ from google.cloud import storage
 
 def train_model(args):
     # Set remote MLflow tracking URI (Kubernetes service)
-    mlflow.set_tracking_uri("http://mlflow.default.svc.cluster.local:5000")
+    mlflow.set_tracking_uri("http://34.45.69.115:5000")
     mlflow.start_run()
 
     # Load CSV (from GCS or local path)
