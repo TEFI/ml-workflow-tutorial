@@ -51,3 +51,9 @@ variable "blob_name" {
   description = "Name of the model blob in the bucket"
   type        = string
 }
+
+variable "mlflow_db_password" {
+  description = "Password for the MLflow database user"
+  type        = string
+  sensitive   = true
+}

@@ -25,3 +25,10 @@ resource "google_artifact_registry_repository" "monitor" {
   format        = "DOCKER"
   description   = "Docker images for monitoring services"
 }
+
+resource "google_artifact_registry_repository" "mlflowserver" {
+  location     = var.region
+  repository_id = "mlflowserver"
+  description  = "Docker repository for custom MLflow server image"
+  format       = "DOCKER"
+}

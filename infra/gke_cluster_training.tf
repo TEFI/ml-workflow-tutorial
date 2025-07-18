@@ -1,4 +1,4 @@
-# GKE training cluster
+# GKE training cluster definition
 resource "google_container_cluster" "training" {
   name     = var.training_cluster_name
   location = var.zone
@@ -13,13 +13,14 @@ resource "google_container_cluster" "training" {
   }
 }
 
-# Espera a que el cluster esté listo antes de usarlo como data source
+# Data source to fetch training cluster details after creation
 data "google_container_cluster" "training" {
   name       = google_container_cluster.training.name
   location   = google_container_cluster.training.location
   depends_on = [google_container_cluster.training]
 }
 
+# Node pool with node-role=training label
 resource "google_container_node_pool" "training_nodes" {
   name       = "training-node-pool"
   cluster    = google_container_cluster.training.name
@@ -32,10 +33,14 @@ resource "google_container_node_pool" "training_nodes" {
     disk_type       = "pd-standard"
     service_account = google_service_account.gke_sa.email
     oauth_scopes    = ["https://www.googleapis.com/auth/cloud-platform"]
+
+    labels = {
+      node-role = "training"
+    }
   }
 }
 
-# Kubernetes provider for training cluster
+# Kubernetes provider configured for training cluster
 provider "kubernetes" {
   alias                  = "training"
   host                   = "https://${data.google_container_cluster.training.endpoint}"
@@ -43,7 +48,7 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(data.google_container_cluster.training.master_auth[0].cluster_ca_certificate)
 }
 
-# GCP service account key secret in training cluster
+# Kubernetes secret with GCP service account key for MLflow access
 resource "kubernetes_secret" "gcp_key" {
   provider = kubernetes.training
 
