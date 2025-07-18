@@ -12,6 +12,7 @@ jobs:
       serving: ${{ steps.filter.outputs.serving }}
       trainer_api: ${{ steps.filter.outputs.trainer_api }}
       ml_pipeline: ${{ steps.filter.outputs.ml_pipeline }}
+      mlflow: ${{ steps.filter.outputs.mlflow }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -27,6 +28,8 @@ jobs:
               - 'training_service/**'
             ml_pipeline:
               - 'ml_pipeline/**'
+            mlflow:
+              - 'services/mlflow/**'
 
   deploy-serving:
     needs: filter-changes
@@ -160,3 +163,50 @@ jobs:
       - name: Push Docker image for training pipeline
         run: |
           docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer/training:latest
+
+  deploy-mlflow:
+    needs: filter-changes
+    if: needs.filter-changes.outputs.mlflow == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Install gke-gcloud-auth-plugin
+        run: gcloud components install gke-gcloud-auth-plugin
+
+      - name: Configure Docker to use Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev
+
+      - name: Build Docker image for MLflow
+        run: |
+          docker build -t ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mlflowserver/mlflow-custom:latest ./services/mlflow
+
+      - name: Push Docker image for MLflow
+        run: |
+          docker push ${{ secrets.TIME_ZONE_DOCKER }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mlflowserver/mlflow-custom:latest
+
+      - name: Get GKE credentials for training cluster
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} \
+            --zone ${{ secrets.GCP_ZONE }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy MLflow to GKE
+        run: |
+          kubectl apply -f k8s/deployment_mlflow.yaml
+          kubectl apply -f k8s/service_mlflow.yaml
+
+      - name: Wait for MLflow rollout
+        run: |
+          kubectl rollout status deployment/mlflow --timeout=120s
