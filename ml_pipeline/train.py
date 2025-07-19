@@ -8,7 +8,7 @@ def parse_args():
     parser.add_argument("--max_depth", type=int, default=None)
     parser.add_argument("--min_samples_split", type=int, default=2)
     parser.add_argument("--min_samples_leaf", type=int, default=1)
-    parser.add_argument("--gcs_path", type=str, required=True)  # gs://bucket/path/file.csv
+    parser.add_argument("--gcs_path", type=str, required=True)
     return parser.parse_args()
 
 

@@ -38,7 +38,7 @@ spec:
             subPath: key.json
           command: ["mlflow", "server"]
           args:
-            - "--backend-store-uri=postgresql://mlflow_user:mlflow123@35.234.123.45:5432/mlflow_db"
+            - "--backend-store-uri=postgresql://mlflow_user:mlflow123@34.55.49.20:5432/mlflow_db"
             - "--default-artifact-root=gs://ml-artifacts-tutorial"
             - "--host=0.0.0.0"
       volumes:
