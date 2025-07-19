@@ -49,13 +49,10 @@ def train_model(args):
     mlflow.log_param("dataset_path", args.gcs_path)
     mlflow.log_metric("accuracy", accuracy)
 
-    # Save model locally
-    local_model_path = "random_forest_model.joblib"
-    joblib.dump(clf, local_model_path)
     mlflow.sklearn.log_model(clf, "model")
 
-    joblib.dump(clf, "model.joblib")
-    mlflow.log_artifact("model.joblib", artifact_path="custom")
+    joblib.dump(clf, "random_forest_model.joblib")
+    mlflow.log_artifact("random_forest_model.joblib")
     mlflow.end_run()
 
 

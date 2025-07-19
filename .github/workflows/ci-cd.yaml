@@ -30,6 +30,8 @@ jobs:
               - 'ml_pipeline/**'
             mlflow:
               - 'services/mlflow/**'
+              - 'k8s/deployment_mlflow.yaml'
+              - 'k8s/service_mlflow.yaml'
 
   deploy-serving:
     needs: filter-changes
