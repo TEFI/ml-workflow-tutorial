@@ -10,6 +10,7 @@ from google.cloud import storage
 def train_model(args):
     # Set remote MLflow tracking URI (Kubernetes service)
     mlflow.set_tracking_uri("http://34.45.69.115:5000")
+    mlflow.set_experiment("random-forest-classifier")
     mlflow.start_run()
 
     # Load CSV (from GCS or local path)
@@ -53,11 +54,8 @@ def train_model(args):
     joblib.dump(clf, local_model_path)
     mlflow.sklearn.log_model(clf, "model")
 
-    # Upload model to GCS
-    model_filename = os.path.basename(args.gcs_path).replace(".csv", "_model.joblib")
-    destination_path = f"models/{model_filename}"
-    upload_to_gcs(local_model_path, f"gs://ml-artifacts-tutorial/{destination_path}")
-
+    joblib.dump(clf, "model.joblib")
+    mlflow.log_artifact("model.joblib", artifact_path="custom")
     mlflow.end_run()
 
 
