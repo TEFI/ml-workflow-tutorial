@@ -16,7 +16,7 @@ spec:
         node-role: training
       containers:
         - name: mlflow
-          image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/mlflow/mlflow-server:latest
+          image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/mlflowserver/mlflow-server:latest
           ports:
             - containerPort: 5000
           env:
