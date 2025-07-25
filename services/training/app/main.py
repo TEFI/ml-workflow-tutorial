@@ -2,7 +2,8 @@ from fastapi import FastAPI, Request, UploadFile, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
+from gcs_utils import upload_file_to_gcs
+from config import BUCKET_NAME
 from app.job_launcher import launch_training_job
 
 app = FastAPI()
@@ -26,6 +27,9 @@ async def submit_training(
     if not dataset and not gcs_path:
         raise HTTPException(status_code=400, detail="Please upload a dataset file or provide a GCS path.")
 
+    if dataset:
+        # Upload the file to GCS and overwrite gcs_path
+        gcs_path = upload_file_to_gcs(dataset, BUCKET_NAME)
 
     # Prepare the training job arguments
     args = [
