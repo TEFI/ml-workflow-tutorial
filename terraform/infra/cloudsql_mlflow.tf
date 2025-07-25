@@ -43,7 +43,7 @@ resource "kubernetes_secret" "mlflow_db_uri" {
   }
 
   data = {
-    DATABASE_URI = base64encode("postgresql://mlflow_user:${var.mlflow_db_password}@${google_sql_database_instance.mlflow.public_ip_address}:5432/mlflow_db")
+    DATABASE_URI = "postgresql://mlflow_user:${var.mlflow_db_password}@${google_sql_database_instance.mlflow.public_ip_address}:5432/mlflow_db"
   }
 
   type = "Opaque"

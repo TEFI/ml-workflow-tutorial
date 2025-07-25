@@ -38,7 +38,7 @@ resource "kubernetes_secret" "gcp_key_training" {
   }
 
   data = {
-    "key.json" = base64encode(var.gcp_key_json_content)
+    "key.json" = var.gcp_key_json_content
   }
 
   type = "Opaque"
