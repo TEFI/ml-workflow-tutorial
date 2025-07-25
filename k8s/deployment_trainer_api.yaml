@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trainer-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trainer-api
+  template:
+    metadata:
+      labels:
+        app: trainer-api
+    spec:
+      containers:
+        - name: trainer-api
+          image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer-api/trainer-api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /app/key.json
+            - name: BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: gcp-secrets
+                  key: bucket-name
+          volumeMounts:
+            - name: gcp-key
+              mountPath: /app/key.json
+              subPath: key.json
+      volumes:
+        - name: gcp-key
+          secret:
+            secretName: gcp-key-secret

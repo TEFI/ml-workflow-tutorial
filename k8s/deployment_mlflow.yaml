@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      nodeSelector:
+        node-role: training
+      containers:
+        - name: mlflow
+          image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/mlflow/mlflow-server:latest
+          ports:
+            - containerPort: 5000
+          env:
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /app/key.json
+          - name: BUCKET_NAME
+            valueFrom:
+              secretKeyRef:
+                name: gcp-secrets
+                key: bucket-name
+          - name: MLFLOW_DATABASE_URI
+            valueFrom:
+              secretKeyRef:
+                name: mlflow-db-uri
+                key: DATABASE_URI
+          volumeMounts:
+          - name: gcp-key
+            mountPath: /app/key.json
+            subPath: key.json
+          command: ["mlflow", "server"]
+          args:
+            - "--backend-store-uri=$(MLFLOW_DATABASE_URI)"
+            - "--default-artifact-root=gs://$(BUCKET_NAME)"
+            - "--host=0.0.0.0"
+      volumes:
+        - name: gcp-key
+          secret:
+            secretName: gcp-key-secret
