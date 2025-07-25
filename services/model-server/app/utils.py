@@ -1,6 +1,6 @@
 import mlflow
 import pandas as pd
-from config import MLFLOW_URI, MODEL_URI
+from app.config import MLFLOW_URI, MODEL_URI
 
 def download_model_from_gcs():
     """
