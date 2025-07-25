@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from gcs_utils import upload_file_to_gcs
-from config import BUCKET_NAME
+from config import BUCKET_NAME, IMAGE_URI
 from app.job_launcher import launch_training_job
 
 app = FastAPI()
@@ -40,15 +40,12 @@ async def submit_training(
         f"--gcs_path={gcs_path}"
     ]
 
-    # Docker image for training job
-    image_uri = "us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer/training:latest"
-
     # Launch training job (GKE or Cloud Run)
-    job_id = launch_training_job(image_uri=image_uri, args=args)
+    job_id = launch_training_job(image_uri=IMAGE_URI, args=args)
 
     return {
         "message": f"✅ Training job `{job_id}` launched!",
-        "image": image_uri,
+        "image": BUCKET_NAME,
         "gcs_path": gcs_path,
         "args": args
     }

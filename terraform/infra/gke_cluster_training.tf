@@ -41,6 +41,13 @@ resource "google_container_node_pool" "training_nodes" {
   }
 }
 
+# IAM binding: allow pulling from Artifact Registry
+resource "google_project_iam_member" "gke_sa_artifact_registry" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
+}
+
 # Kubernetes provider configured for training cluster
 provider "kubernetes" {
   alias                  = "training"
@@ -48,4 +55,3 @@ provider "kubernetes" {
   token                  = data.google_client_config.default.access_token
   cluster_ca_certificate = base64decode(data.google_container_cluster.training.master_auth[0].cluster_ca_certificate)
 }
-

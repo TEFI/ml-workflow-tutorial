@@ -41,6 +41,13 @@ resource "google_container_node_pool" "serving_nodes" {
   }
 }
 
+# IAM binding: allow pulling from Artifact Registry for serving cluster too
+resource "google_project_iam_member" "gke_sa_artifact_registry_serving" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.gke_sa.email}"
+}
+
 # Kubernetes provider configuration for the serving cluster
 provider "kubernetes" {
   alias                  = "serving"
