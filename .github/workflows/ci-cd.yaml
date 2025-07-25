@@ -125,7 +125,7 @@ jobs:
       - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
       - run: |
-          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/training/training-job:latest"
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/trainer/training-job:latest"
           docker build -t $IMAGE ./ml_pipeline
           docker push $IMAGE
 
