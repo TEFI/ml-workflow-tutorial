@@ -146,7 +146,7 @@ jobs:
       - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
       - run: |
-          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/mlflow/mlflow-server:latest"
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/mlflowserver/mlflow-server:latest"
           docker build -t $IMAGE ./services/mlflow
           docker push $IMAGE
 
