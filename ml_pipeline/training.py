@@ -6,7 +6,7 @@ import joblib
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.models.signature import infer_signature
-from config import EXPERIMENT_NAME, MLFLOW_URI
+from ml_pipeline.config import EXPERIMENT_NAME, MLFLOW_URI
 
 
 def train_model(args):
