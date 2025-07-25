@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: trainer-api
-          image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer-api/trainer-api:latest
+          image: us-central1-docker.pkg.dev/sodium-pager-461309-p3/trainer-api/training-api:latest
           ports:
             - containerPort: 8000
           env:
