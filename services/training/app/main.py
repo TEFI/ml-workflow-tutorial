@@ -2,9 +2,11 @@ from fastapi import FastAPI, Request, UploadFile, Form, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from gcs_utils import upload_file_to_gcs
-from config import BUCKET_NAME, IMAGE_URI
+
+from app.config import BUCKET_NAME, IMAGE_URI
 from app.job_launcher import launch_training_job
+from app.gcs_utils import upload_file_to_gcs
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
