@@ -31,8 +31,12 @@ jobs:
           filters: |
             serving:
               - 'services/model-server/**'
+              - 'k8s/deployment_serving_api.yaml'
+              - 'k8s/service_serving_api.yaml'
             trainer_api:
               - 'services/training/**'
+              - 'k8s/deployment_trainer_api.yaml'
+              - 'k8s/service_trainer_api.yaml'
             ml_pipeline:
               - 'ml_pipeline/**'
             mlflow:
@@ -89,7 +93,7 @@ jobs:
       - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
       - run: |
-          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/trainer/training-api:latest"
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/trainer-api/training-api:latest"
           docker build -t $IMAGE ./services/training
           docker push $IMAGE
 
