@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+env:
+  GCP_PROJECT_ID: sodium-pager-461309-p3
+  GCP_REGION: us-central1
+  GCP_ZONE: us-central1-a
+  SERVING_CLUSTER: ml-serving-cluster
+  TRAINING_CLUSTER: ml-training-cluster
+
 jobs:
   filter-changes:
     runs-on: ubuntu-latest
@@ -38,46 +45,30 @@ jobs:
     if: needs.filter-changes.outputs.serving == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_KEY }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Install gke-gcloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
-      - name: Configure Docker to use Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+      - run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/serving/inference-api:latest"
+          docker build -t $IMAGE ./services/model-server
+          docker push $IMAGE
 
-      - name: Build Docker image for serving
-        run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving/serving-api:latest ./services/model-server
+      - run: |
+          gcloud container clusters get-credentials $SERVING_CLUSTER \
+            --zone $GCP_ZONE \
+            --project $GCP_PROJECT_ID
 
-      - name: Push Docker image for serving
-        run: |
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/serving/serving-api:latest
-
-      - name: Get GKE credentials for serving cluster
-        run: |
-          gcloud container clusters get-credentials ${{ secrets.SERVING_CLUSTER }} \
-            --zone ${{ secrets.GCP_ZONE }} \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Deploy serving to GKE
-        run: |
+      - run: |
           kubectl apply -f k8s/deployment_serving_api.yaml
           kubectl apply -f k8s/service_serving_api.yaml
-
-      - name: Rollout restart serving deployment
-        run: |
           kubectl rollout restart deployment/serving-api
           kubectl rollout status deployment/serving-api --timeout=120s
 
@@ -86,51 +77,34 @@ jobs:
     if: needs.filter-changes.outputs.trainer_api == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_KEY }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Install gke-gcloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
-      - name: Configure Docker to use Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+      - run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/trainer/training-api:latest"
+          docker build -t $IMAGE ./training_service
+          docker push $IMAGE
 
-      - name: Build Docker image for trainer API
-        run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer-api/trainer-api:latest ./training_service
+      - run: |
+          gcloud container clusters get-credentials $TRAINING_CLUSTER \
+            --zone $GCP_ZONE \
+            --project $GCP_PROJECT_ID
 
-      - name: Push Docker image for trainer API
-        run: |
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer-api/trainer-api:latest
-
-      - name: Get GKE credentials
-        run: |
-          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} \
-            --zone ${{ secrets.GCP_ZONE }} \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Confirm access to training cluster
-        run: |
+      - run: |
           echo "Verifying access to cluster"
           kubectl get nodes || (echo "❌ Cannot access cluster!" && exit 1)
 
-      - name: Deploy trainer API to GKE
-        run: |
+      - run: |
           kubectl apply -f k8s/deployment_trainer_api.yaml
           kubectl apply -f k8s/service_trainer_api.yaml
-
-      - name: Rollout restart trainer API deployment
-        run: |
           kubectl rollout restart deployment/trainer-api
           kubectl rollout status deployment/trainer-api
 
@@ -139,76 +113,49 @@ jobs:
     if: needs.filter-changes.outputs.ml_pipeline == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_KEY }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Install gke-gcloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
-      - name: Configure Docker to use Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
-
-      - name: Build Docker image for training pipeline
-        run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer/training:latest ./ml_pipeline
-
-      - name: Push Docker image for training pipeline
-        run: |
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/trainer/training:latest
+      - run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/training/training-job:latest"
+          docker build -t $IMAGE ./ml_pipeline
+          docker push $IMAGE
 
   deploy-mlflow:
     needs: filter-changes
     if: needs.filter-changes.outputs.mlflow == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_KEY }}
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Install gke-gcloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud components install gke-gcloud-auth-plugin
+      - run: gcloud auth configure-docker $GCP_REGION-docker.pkg.dev
 
-      - name: Configure Docker to use Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
+      - run: |
+          IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/mlflow/mlflow-server:latest"
+          docker build -t $IMAGE ./services/mlflow
+          docker push $IMAGE
 
-      - name: Build Docker image for MLflow
-        run: |
-          docker build -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mlflowserver/mlflow-custom:latest ./services/mlflow
+      - run: |
+          gcloud container clusters get-credentials $TRAINING_CLUSTER \
+            --zone $GCP_ZONE \
+            --project $GCP_PROJECT_ID
 
-      - name: Push Docker image for MLflow
-        run: |
-          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mlflowserver/mlflow-custom:latest
-
-      - name: Get GKE credentials for training cluster
-        run: |
-          gcloud container clusters get-credentials ${{ secrets.TRAINING_CLUSTER }} \
-            --zone ${{ secrets.GCP_ZONE }} \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Deploy MLflow to GKE
-        run: |
+      - run: |
           kubectl apply -f k8s/deployment_mlflow.yaml
           kubectl apply -f k8s/service_mlflow.yaml
-
-      - name: Wait for MLflow rollout
-        run: |
           kubectl rollout status deployment/mlflow --timeout=120s
