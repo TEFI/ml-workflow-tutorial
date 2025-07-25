@@ -90,7 +90,7 @@ jobs:
 
       - run: |
           IMAGE="$GCP_REGION-docker.pkg.dev/$GCP_PROJECT_ID/trainer/training-api:latest"
-          docker build -t $IMAGE ./training_service
+          docker build -t $IMAGE ./services/training
           docker push $IMAGE
 
       - run: |
