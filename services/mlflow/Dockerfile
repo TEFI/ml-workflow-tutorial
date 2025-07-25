@@ -19,7 +19,7 @@ COPY . .
 EXPOSE 5000
 
 # Start the MLflow tracking server with PostgreSQL and GCS
-CMD ["mlflow", "server", \
-     "--backend-store-uri=postgresql://mlflow_user:mlflow123@35.234.123.45:5432/mlflow_db", \
-     "--default-artifact-root=gs://ml-artifacts-tutorial", \
-     "--host=0.0.0.0"]
+CMD ["sh", "-c", "mlflow server \
+  --backend-store-uri=$BACKEND_URI \
+  --default-artifact-root=$ARTIFACT_ROOT \
+  --host=0.0.0.0"]

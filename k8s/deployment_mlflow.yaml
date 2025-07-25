@@ -20,27 +20,29 @@ spec:
           ports:
             - containerPort: 5000
           env:
-          - name: GOOGLE_APPLICATION_CREDENTIALS
-            value: /app/key.json
-          - name: BUCKET_NAME
-            valueFrom:
-              secretKeyRef:
-                name: gcp-secrets
-                key: bucket-name
-          - name: MLFLOW_DATABASE_URI
-            valueFrom:
-              secretKeyRef:
-                name: mlflow-db-uri
-                key: DATABASE_URI
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /app/key.json
+            - name: BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: gcp-secrets
+                  key: bucket-name
+            - name: MLFLOW_DATABASE_URI
+              valueFrom:
+                secretKeyRef:
+                  name: mlflow-db-uri
+                  key: DATABASE_URI
           volumeMounts:
-          - name: gcp-key
-            mountPath: /app/key.json
-            subPath: key.json
-          command: ["mlflow", "server"]
+            - name: gcp-key
+              mountPath: /app/key.json
+              subPath: key.json
+          command: ["sh", "-c"]
           args:
-            - "--backend-store-uri=$(MLFLOW_DATABASE_URI)"
-            - "--default-artifact-root=gs://$(BUCKET_NAME)"
-            - "--host=0.0.0.0"
+            - |
+              mlflow server \
+                --backend-store-uri="$MLFLOW_DATABASE_URI" \
+                --default-artifact-root="gs://$BUCKET_NAME" \
+                --host=0.0.0.0
       volumes:
         - name: gcp-key
           secret:
