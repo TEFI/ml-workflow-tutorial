@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <script src="/static/script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h2>Submit Random Forest Training Job</h2>
+        <form name="trainForm" action="/submit" enctype="multipart/form-data" method="post" onsubmit="return validateForm()">
+            Dataset (upload):
+            <input name="dataset" type="file"/><br/>
+
+            Or Dataset (GCS path):
+            <input name="gcs_path" type="text" placeholder="gs://your-bucket/dataset.csv"/><br/>
+
+            Number of estimators (1–1000):
+            <input name="n_estimators" type="number" value="100" min="1" max="1000"/><br/>
+
+            Max depth (1–100):
+            <input name="max_depth" type="number" value="10" min="1" max="100"/><br/>
+
+            Min samples split (2–100):
+            <input name="min_samples_split" type="number" value="2" min="2" max="100"/><br/>
+
+            Min samples leaf (1–100):
+            <input name="min_samples_leaf" type="number" value="1" min="1" max="100"/><br/>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
