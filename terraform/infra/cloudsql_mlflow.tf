@@ -36,6 +36,20 @@ resource "google_sql_user" "mlflow_user" {
   password = var.mlflow_db_password
 }
 
+resource "kubernetes_secret" "mlflow_db_uri" {
+  provider = kubernetes.training
+  metadata {
+    name = "mlflow-db-uri"
+  }
+
+  data = {
+    DATABASE_URI = base64encode("postgresql://mlflow_user:${var.mlflow_db_password}@${google_sql_database_instance.mlflow.public_ip_address}:5432/mlflow_db")
+  }
+
+  type = "Opaque"
+}
+
+
 output "mlflow_sql_instance_ip" {
   value = google_sql_database_instance.mlflow.public_ip_address
 }
