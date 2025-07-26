@@ -12,9 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install MLflow, PostgreSQL connector, and Google Cloud Storage support
 RUN pip install --no-cache-dir mlflow psycopg2-binary google-cloud-storage
 
-# Copy the current directory contents into the container (optional if configs/scripts needed)
-COPY . .
-
 # Expose MLflow's default port
 EXPOSE 5000
 
