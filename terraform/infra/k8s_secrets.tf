@@ -1,3 +1,7 @@
+data "local_file" "gcp_key" {
+  filename =  abspath("${path.module}/../../keys/terraform-deployer-key.json")
+}
+
 # Create a Kubernetes secret in the serving cluster containing the GCP service account key
 resource "kubernetes_secret" "gcp_key_serving" {
   provider = kubernetes.serving
@@ -7,7 +11,7 @@ resource "kubernetes_secret" "gcp_key_serving" {
   }
 
   data = {
-    "key.json" = var.gcp_key_json_content
+    "key.json" = data.local_file.gcp_key.content
   }
 
   type = "Opaque"
@@ -38,7 +42,7 @@ resource "kubernetes_secret" "gcp_key_training" {
   }
 
   data = {
-    "key.json" = var.gcp_key_json_content
+    "key.json" = data.local_file.gcp_key.content
   }
 
   type = "Opaque"
